@@ -14,9 +14,7 @@ namespace TLPhoneChecker
         private static TelegramClient client = null;
         private static async void LaunchChecker()
         {
-
             var reader = new StreamReader("phones.txt");
-
 
             await client.ConnectAsync();
             while (client.IsConnected == false)
@@ -38,8 +36,15 @@ namespace TLPhoneChecker
 
         private static async Task CheckPhone(string phone)
         {
-            bool result = await client.IsPhoneRegisteredAsync(phone);
-            Console.WriteLine("{0}, {1}", phone, result.ToString());
+            try
+            {
+                bool result = await client.IsPhoneRegisteredAsync(phone);
+                Console.WriteLine("{0}, {1}", phone, result.ToString());
+            }
+            catch(InvalidOperationException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
         private static void Main(string[] args)
         {
@@ -50,9 +55,21 @@ namespace TLPhoneChecker
             ConnectToAPI().Wait();
             while (reader.EndOfStream == false)
             {
-                string number = reader.ReadLine();
-                CheckPhone(number).Wait();
-                Thread.Sleep(TimeSpan.FromSeconds(1));
+                string number = string.Empty;
+                try
+                {
+                    number = string.Format("+7{0}", reader.ReadLine());
+                    CheckPhone(number).Wait();
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine("Number {0}: {1}", number, e.Message);
+                    continue;
+                }
+                finally
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(5));
+                }
             }
 
         }
